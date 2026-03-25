@@ -35,6 +35,12 @@ if [[ -z "${DOTFILES_SAFE_MODE:-}" ]] && [[ -o interactive ]] && [[ -t 0 ]] && [
   DOTFILES_TTY_UI=1
 fi
 
+if (( DOTFILES_TTY_UI )) && [[ "${TERM:-}" == "dumb" ]]; then
+  # Some embedded terminals expose a real TTY but still inherit TERM=dumb.
+  # Promote them so tmux/ssh can negotiate a usable terminal type.
+  export TERM="xterm-256color"
+fi
+
 if [[ -d "$HOME/Library/pnpm" ]]; then
   export PNPM_HOME="$HOME/Library/pnpm"
 elif [[ -d "$HOME/.local/share/pnpm" ]]; then
