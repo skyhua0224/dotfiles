@@ -8,6 +8,7 @@ eza
 fd
 fzf
 git
+libyaml
 mise
 neovim
 procs

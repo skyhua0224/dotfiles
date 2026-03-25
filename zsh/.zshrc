@@ -83,10 +83,15 @@ if [[ -n "${PNPM_HOME:-}" ]]; then
   esac
 fi
 
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 export PATH="$PATH:$HOME/.lmstudio/bin"
 export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
+
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+elif [[ -d "${ASDF_DATA_DIR:-$HOME/.asdf}/shims" ]]; then
+  export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+fi
 
 if command -v code-insiders >/dev/null 2>&1; then
   alias code='code-insiders'

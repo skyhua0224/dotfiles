@@ -23,10 +23,13 @@ fi
 
 assert_grep '^brew "tmux"$' "$REPO_ROOT/packages/Brewfile"
 assert_grep '^brew "neovim"$' "$REPO_ROOT/packages/Brewfile"
+assert_grep '^brew "libyaml"$' "$REPO_ROOT/packages/Brewfile"
 assert_grep '^tmux$' "$REPO_ROOT/packages/cachyos-pacman.txt"
 assert_grep '^neovim$' "$REPO_ROOT/packages/cachyos-pacman.txt"
+assert_grep '^libyaml$' "$REPO_ROOT/packages/cachyos-pacman.txt"
 assert_grep '^__pycache__/$' "$REPO_ROOT/.gitignore"
 assert_grep '^\*\.pyc$' "$REPO_ROOT/.gitignore"
+assert_grep 'mise activate zsh' "$REPO_ROOT/zsh/.zshrc"
 
 if [[ -e "$REPO_ROOT/bin/__pycache__/setup.cpython-312.pyc" ]]; then
   fail "tracked Python bytecode cache should not live in the repo"
