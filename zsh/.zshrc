@@ -111,51 +111,14 @@ if (( DOTFILES_TTY_UI )); then
   fi
 
   if command -v tmux >/dev/null 2>&1; then
-    tmux() {
-      local _tmux_term="${TERM:-}"
-      local _tmux_subcmd=""
-      local _tmux_arg=""
-      local _tmux_skip_next=0
+    ta() {
+      local _session="${1:-main}"
+      shift $(( $# > 0 ? 1 : 0 ))
+      command tmux new-session -A -s "$_session" "$@"
+    }
 
-      if [[ "$_tmux_term" == "dumb" ]]; then
-        _tmux_term="xterm-256color"
-      fi
-
-      for _tmux_arg in "$@"; do
-        if (( _tmux_skip_next )); then
-          _tmux_skip_next=0
-          continue
-        fi
-        case "$_tmux_arg" in
-          -c|-f|-L|-N|-S|-T)
-            _tmux_skip_next=1
-            ;;
-          --)
-            break
-            ;;
-          -*)
-            ;;
-          *)
-            _tmux_subcmd="$_tmux_arg"
-            break
-            ;;
-        esac
-      done
-
-      case "$_tmux_subcmd" in
-        ""|attach|attach-session|a|new|new-session|n|switch-client)
-          if [[ -z "${TMUX:-}" ]] && command -v script >/dev/null 2>&1; then
-            env TERM="$_tmux_term" script -q /dev/null tmux "$@"
-            return
-          fi
-          if [[ -r /dev/tty && -w /dev/tty ]]; then
-            TERM="$_tmux_term" command tmux "$@" </dev/tty >/dev/tty 2>&1
-            return
-          fi
-          ;;
-      esac
-
-      TERM="$_tmux_term" command tmux "$@"
+    tls() {
+      command tmux list-sessions
     }
   fi
 
