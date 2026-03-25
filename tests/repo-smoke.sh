@@ -29,7 +29,12 @@ assert_grep '^neovim$' "$REPO_ROOT/packages/cachyos-pacman.txt"
 assert_grep '^libyaml$' "$REPO_ROOT/packages/cachyos-pacman.txt"
 assert_grep '^__pycache__/$' "$REPO_ROOT/.gitignore"
 assert_grep '^\*\.pyc$' "$REPO_ROOT/.gitignore"
+assert_grep '\.asdf/shims' "$REPO_ROOT/zsh/.zshenv"
 assert_grep 'mise activate zsh' "$REPO_ROOT/zsh/.zshrc"
+assert_grep 'DOTFILES_TTY_UI=1' "$REPO_ROOT/zsh/.zshrc"
+assert_grep '\[\[ -t 0 \]\]' "$REPO_ROOT/zsh/.zshrc"
+assert_grep '\.oh-my-zsh' "$REPO_ROOT/bin/doctor.sh"
+assert_grep 'Legacy leftovers' "$REPO_ROOT/bin/doctor.sh"
 
 if [[ -e "$REPO_ROOT/bin/__pycache__/setup.cpython-312.pyc" ]]; then
   fail "tracked Python bytecode cache should not live in the repo"

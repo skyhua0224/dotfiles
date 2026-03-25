@@ -5,6 +5,8 @@ for _brew in /opt/homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
   fi
 done
 
+typeset -U path PATH
+
 if [[ -f "$HOME/.orbstack/shell/init.zsh" ]]; then
   source "$HOME/.orbstack/shell/init.zsh"
 fi

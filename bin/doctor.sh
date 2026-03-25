@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANAGED_FILES=(
+  ".zshenv"
   ".zshrc"
   ".zprofile"
   ".gitconfig"
@@ -49,6 +50,37 @@ elif command -v asdf >/dev/null 2>&1; then
   printf '  ok   asdf\n'
 else
   printf '  miss asdf/mise\n'
+fi
+
+printf '\nLegacy leftovers\n'
+if [[ ":${PATH}:" == *":${HOME}/.asdf/shims:"* ]]; then
+  printf '  warn PATH still includes %s\n' "${HOME}/.asdf/shims"
+else
+  printf '  ok   .asdf shims not in PATH\n'
+fi
+
+if [[ ":${PATH}:" == *":${HOME}/.asdf/bin:"* ]]; then
+  printf '  warn PATH still includes %s\n' "${HOME}/.asdf/bin"
+else
+  printf '  ok   .asdf bin not in PATH\n'
+fi
+
+if [[ -d "${HOME}/.asdf" ]]; then
+  printf '  warn %s still exists\n' "${HOME}/.asdf"
+else
+  printf '  ok   .asdf directory removed\n'
+fi
+
+if [[ -d "${HOME}/.oh-my-zsh" ]]; then
+  printf '  warn %s still exists\n' "${HOME}/.oh-my-zsh"
+else
+  printf '  ok   .oh-my-zsh directory removed\n'
+fi
+
+if [[ -f "${HOME}/.p10k.zsh" ]]; then
+  printf '  warn %s still exists\n' "${HOME}/.p10k.zsh"
+else
+  printf '  ok   .p10k.zsh removed\n'
 fi
 
 printf '\nLocal overrides\n'
