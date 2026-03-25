@@ -1,5 +1,12 @@
 # dotfiles
 
+[![GitHub last commit](https://img.shields.io/github/last-commit/skyhua0224/dotfiles?style=flat-square)](https://github.com/skyhua0224/dotfiles/commits/main)
+[![macOS](https://img.shields.io/badge/macOS-13%2B-000000?style=flat-square&logo=apple)](https://github.com/skyhua0224/dotfiles)
+[![CachyOS](https://img.shields.io/badge/CachyOS%20%2F%20Arch-pacman-1793D1?style=flat-square&logo=arch-linux)](https://github.com/skyhua0224/dotfiles)
+[![Shell](https://img.shields.io/badge/shell-zsh-F15A24?style=flat-square)](https://github.com/skyhua0224/dotfiles/tree/main/zsh)
+[![Prompt](https://img.shields.io/badge/prompt-Starship-DD0B78?style=flat-square)](https://starship.rs/)
+[![Runtime](https://img.shields.io/badge/runtime-mise-7A5AF8?style=flat-square)](https://mise.jdx.dev/)
+
 我的终端与 shell 环境配置，支持 macOS 和 CachyOS / Arch Linux。
 
 ---
