@@ -112,11 +112,46 @@ if (( DOTFILES_TTY_UI )); then
 
   if command -v tmux >/dev/null 2>&1; then
     tmux() {
-      if [[ "${TERM:-}" == "dumb" ]]; then
-        TERM="xterm-256color" command tmux "$@"
-      else
-        command tmux "$@"
+      local _tmux_term="${TERM:-}"
+      local _tmux_subcmd=""
+      local _tmux_arg=""
+      local _tmux_skip_next=0
+
+      if [[ "$_tmux_term" == "dumb" ]]; then
+        _tmux_term="xterm-256color"
       fi
+
+      for _tmux_arg in "$@"; do
+        if (( _tmux_skip_next )); then
+          _tmux_skip_next=0
+          continue
+        fi
+        case "$_tmux_arg" in
+          -c|-f|-L|-N|-S|-T)
+            _tmux_skip_next=1
+            ;;
+          --)
+            break
+            ;;
+          -*)
+            ;;
+          *)
+            _tmux_subcmd="$_tmux_arg"
+            break
+            ;;
+        esac
+      done
+
+      case "$_tmux_subcmd" in
+        ""|attach|attach-session|a|new|new-session|n|switch-client)
+          if [[ -t 0 && ! -t 1 && -r /dev/tty ]]; then
+            TERM="$_tmux_term" command tmux "$@" </dev/tty >/dev/tty 2>&1
+            return
+          fi
+          ;;
+      esac
+
+      TERM="$_tmux_term" command tmux "$@"
     }
   fi
 
