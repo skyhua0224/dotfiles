@@ -120,6 +120,14 @@ if (( DOTFILES_TTY_UI )); then
     tls() {
       command tmux list-sessions
     }
+
+    treset() {
+      if command tmux kill-server >/dev/null 2>&1; then
+        printf 'tmux server stopped. Run `tmux` or `ta` to start fresh.\n'
+      else
+        printf 'no tmux server was running. Run `tmux` or `ta` if you need one.\n'
+      fi
+    }
   fi
 
   ls() {

@@ -4,27 +4,35 @@
 [![macOS](https://img.shields.io/badge/macOS-13%2B-000000?style=flat-square&logo=apple)](https://github.com/skyhua0224/dotfiles)
 [![CachyOS](https://img.shields.io/badge/CachyOS%20%2F%20Arch-pacman-1793D1?style=flat-square&logo=arch-linux)](https://github.com/skyhua0224/dotfiles)
 [![Shell](https://img.shields.io/badge/shell-zsh-F15A24?style=flat-square)](https://github.com/skyhua0224/dotfiles/tree/main/zsh)
-[![Prompt](https://img.shields.io/badge/prompt-Starship-DD0B78?style=flat-square)](https://starship.rs/)
-[![Runtime](https://img.shields.io/badge/runtime-mise-7A5AF8?style=flat-square)](https://mise.jdx.dev/)
+[![Prompt](https://img.shields.io/badge/prompt-Starship-DD0B78?style=flat-square)](https://github.com/starship/starship)
+[![Runtime](https://img.shields.io/badge/runtime-mise-7A5AF8?style=flat-square)](https://github.com/jdx/mise)
 
 我的终端与 shell 环境配置，支持 macOS 和 CachyOS / Arch Linux。
+
+> 链接说明：
+> - 项目页和文档页统一使用 GitHub 原链。
+> - 下载命令额外提供国内镜像，目前实测可用的是 `ghfast.top` 的 `raw.githubusercontent.com` / tarball 代理。
 
 ---
 
 ## 安装
 
 ```bash
-# 全自动 — 识别平台，安装全部适配模块
-curl -sL get.sky-hua.xyz | bash -s -- --auto
+# 全自动（GitHub 原链）
+curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
 
-# 交互式 — 选择语言，自选安装内容（默认）
-curl -sL get.sky-hua.xyz | bash
+# 交互式（GitHub 原链）
+curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
 ```
 
-备用地址（同一脚本，GitHub 访问慢时使用 `get.sky-hua.xyz`）：
+国内镜像（同一脚本）：
 
 ```bash
-curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
+# 全自动（国内镜像）
+curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
+
+# 交互式（国内镜像）
+curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
 ```
 
 ### 安装器做了什么
@@ -165,6 +173,14 @@ git show HEAD   # 单次提交 diff
 选择 tmux 模块时，安装器自动克隆 oh-my-tmux 并建立软链。
 自定义主题和设置在 `tmux/.tmux.conf.local` 中。
 
+### Shell helper
+
+| 命令 | 说明 |
+|------|------|
+| `ta [session]` | 进入 tmux；不存在就创建，默认 session 名为 `main` |
+| `tls` | 列出当前 tmux sessions |
+| `treset` | 杀掉旧 tmux server，适合改完 shell / tmux 配置后重置环境 |
+
 ### 快捷键
 
 | 按键 | 功能 |
@@ -182,11 +198,17 @@ git show HEAD   # 单次提交 diff
 
 默认开启鼠标支持。
 
+### 简短排障
+
+如果你看到 `open terminal failed: not a terminal`，先执行一次 `treset`，再重新进入 `tmux` 或 `ta`。
+
+这通常不是新 shell 本身坏了，而是旧 tmux server 还活着，继续拿着上一版终端环境服务新的 client。
+
 ---
 
 ## Neovim — LazyVim
 
-基于 [LazyVim](https://lazyvim.org)。配置在 `nvim/.config/nvim/`。
+基于 [LazyVim](https://github.com/LazyVim/LazyVim)。配置在 `nvim/.config/nvim/`。
 当前保持 LazyVim 基础结构，先把环境拉起来，个人插件和桌面级定制后面再继续加。
 
 ### 更新插件
@@ -214,7 +236,7 @@ git show HEAD   # 单次提交 diff
 | `gr` | 查看引用 |
 | `<leader>ca` | 代码操作 |
 
-完整快捷键：`:h lazyvim-keymaps` 或 [lazyvim.org/keymaps](https://lazyvim.org/keymaps)
+完整快捷键：`:h lazyvim-keymaps` 或 [LazyVim keymaps](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua)
 
 ---
 
@@ -224,7 +246,7 @@ git show HEAD   # 单次提交 diff
 
 | 工具 | 命令 | 说明 |
 |------|------|------|
-| [Claude Code](https://claude.ai/code) | `claude` | Anthropic 官方 CLI |
+| [Claude Code](https://github.com/anthropics/claude-code) | `claude` | Anthropic 官方 CLI |
 | [Codex](https://github.com/openai/codex) | `codex` | OpenAI 编程助手 CLI |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `gemini` | Google Gemini CLI |
 
@@ -299,11 +321,14 @@ My terminal and shell environment for macOS and CachyOS / Arch Linux.
 ### Install
 
 ```bash
-# Fully automatic
-curl -sL get.sky-hua.xyz | bash -s -- --auto
+# Fully automatic (GitHub)
+curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
 
-# Interactive (default) — language select, then module picker
-curl -sL get.sky-hua.xyz | bash
+# Interactive (GitHub)
+curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
+
+# China mirror
+curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
 ```
 
 | Mode | Behaviour |
@@ -386,6 +411,14 @@ python3 ~/dotfiles/bin/setup.py --uninstall --dry-run
 
 ### tmux keybindings (oh-my-tmux)
 
+Helper commands:
+
+| Command | Action |
+|---------|--------|
+| `ta [session]` | attach to a session or create it, defaulting to `main` |
+| `tls` | list tmux sessions |
+| `treset` | kill the current tmux server so the next launch starts clean |
+
 | Key | Action |
 |-----|--------|
 | `Ctrl-b` | Prefix |
@@ -394,6 +427,8 @@ python3 ~/dotfiles/bin/setup.py --uninstall --dry-run
 | `<prefix> h/j/k/l` | Navigate panes |
 | `<prefix> Tab` | Last window |
 | `<prefix> r` | Reload config |
+
+If you hit `open terminal failed: not a terminal`, run `treset` once and start tmux again. In practice this usually means an older tmux server is still running with stale terminal state.
 
 ### Neovim (LazyVim) — `<leader>` = Space
 
