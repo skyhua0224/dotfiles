@@ -1,0 +1,5 @@
+# AI coding assistants — installed as npm globals
+# Run: npm install -g $(grep -v '^#' npm-global.txt | tr '\n' ' ')
+@anthropic-ai/claude-code
+@openai/codex
+@google/gemini-cli

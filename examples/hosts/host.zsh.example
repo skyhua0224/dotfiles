@@ -1,0 +1,6 @@
+# Host-specific shell overrides.
+
+# Example:
+# if [[ "$DOTFILES_HOST" == "mac-mini" ]]; then
+#   alias tails='log stream --style compact'
+# fi

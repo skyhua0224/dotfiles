@@ -1,0 +1,22 @@
+# Verify package names against your enabled repos before installing.
+atuin
+bat
+git-delta
+duf
+dust
+eza
+fd
+fzf
+git
+mise
+neovim
+procs
+ripgrep
+starship
+tmux
+zoxide
+zsh
+zsh-autosuggestions
+zsh-completions
+zsh-history-substring-search
+zsh-syntax-highlighting

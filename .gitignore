@@ -1,0 +1,12 @@
+.DS_Store
+*.swp
+*.tmp
+*.pyc
+__pycache__/
+
+# local notes
+notes/
+
+# backups created by installer
+.backups/
+local_cache/

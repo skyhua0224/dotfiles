@@ -1,0 +1,12 @@
+[tools]
+node = "24.6.0"
+python = "3.12.3"
+ruby = "3.3.1"
+rust = "1.78.0"
+
+# Your current asdf setup uses an AdoptOpenJDK-flavored Java string.
+# mise's current core Java backend prefers vendors such as:
+# openjdk / temurin / zulu / corretto
+#
+# Pick one explicitly when you migrate, for example:
+# java = "temurin-23.0.2"

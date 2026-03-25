@@ -1,0 +1,4 @@
+# Login-shell overrides for one machine only.
+
+# Example:
+# export PATH="$HOME/.local/bin:$PATH"

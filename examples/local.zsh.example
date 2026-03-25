@@ -1,0 +1,6 @@
+# Local shell overrides that should never enter git.
+
+# Example:
+# export EDITOR="nvim"
+# export VISUAL="nvim"
+# alias gs='git status -sb'
