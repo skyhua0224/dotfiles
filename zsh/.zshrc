@@ -110,6 +110,16 @@ if (( DOTFILES_TTY_UI )); then
     alias code='code-insiders'
   fi
 
+  if command -v tmux >/dev/null 2>&1; then
+    tmux() {
+      if [[ "${TERM:-}" == "dumb" ]]; then
+        TERM="xterm-256color" command tmux "$@"
+      else
+        command tmux "$@"
+      fi
+    }
+  fi
+
   ls() {
     command eza --icons --group-directories-first "$@"
   }
