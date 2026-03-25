@@ -144,7 +144,7 @@ if (( DOTFILES_TTY_UI )); then
 
       case "$_tmux_subcmd" in
         ""|attach|attach-session|a|new|new-session|n|switch-client)
-          if [[ -t 0 && ! -t 1 && -r /dev/tty ]]; then
+          if [[ -r /dev/tty && -w /dev/tty ]]; then
             TERM="$_tmux_term" command tmux "$@" </dev/tty >/dev/tty 2>&1
             return
           fi
