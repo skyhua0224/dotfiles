@@ -146,8 +146,13 @@ if (( DOTFILES_TTY_UI )); then
   alias h='tldr'
 
   if command -v zoxide >/dev/null 2>&1; then
-    eval "$(zoxide init zsh)"
-    alias cdd='zi'
+    typeset -g DOTFILES_ZOXIDE_CMD="${DOTFILES_ZOXIDE_CMD:-cd}"
+    eval "$(zoxide init zsh --cmd "$DOTFILES_ZOXIDE_CMD")"
+    alias cdd="${DOTFILES_ZOXIDE_CMD}i"
+
+    pcd() {
+      builtin cd "$@"
+    }
   fi
 
   if command -v atuin >/dev/null 2>&1; then

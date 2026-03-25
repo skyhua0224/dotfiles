@@ -133,6 +133,7 @@ python3 ~/dotfiles/bin/setup.py --uninstall --rollback
 | `lt` | eza — 树形视图（3 层） |
 | `cd` | zoxide — 智能跳转，自动学习历史 |
 | `cdd` | zoxide — fzf 交互式目录选择 |
+| `pcd` | 原生 `cd` — 保留 builtin 行为，适合需要精确参数时使用 |
 | `b` | bat — 语法高亮查看文件（简洁模式） |
 | `bp` | bat — 完整模式，含行号和标题 |
 | `rg` | ripgrep — 智能大小写，跟随符号链接 |
@@ -144,6 +145,7 @@ python3 ~/dotfiles/bin/setup.py --uninstall --rollback
 
 > `ls` 和 `cd` 的替换**只在交互式 zsh 中生效**。
 > 脚本、Claude Code、Codex 调用的永远是系统原生命令，不受影响。
+> 如果你不想让 zoxide 接管 `cd`，可以在 `~/.config/dotfiles/local.zsh` 里加一行：`export DOTFILES_ZOXIDE_CMD=z`
 
 ### 快捷键
 
@@ -391,6 +393,7 @@ python3 ~/dotfiles/bin/setup.py --uninstall --dry-run
 | `lt` | eza — tree view (3 levels) |
 | `cd` | zoxide — smart directory jump |
 | `cdd` | zoxide — interactive fuzzy picker |
+| `pcd` | native `cd` — keeps the builtin behavior for exact flag handling |
 | `b` | bat — plain syntax-highlighted view |
 | `bp` | bat — full view with line numbers |
 | `rg` | ripgrep — smart-case search |
@@ -400,6 +403,7 @@ python3 ~/dotfiles/bin/setup.py --uninstall --dry-run
 | `h` | tldr — quick reference |
 
 > `ls` and `cd` replacements only apply in interactive zsh. Scripts and AI tools always use native system commands.
+> If you want to keep zoxide on `z` instead, add `export DOTFILES_ZOXIDE_CMD=z` to `~/.config/dotfiles/local.zsh`.
 
 ### Keybindings
 
