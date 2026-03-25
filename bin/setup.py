@@ -1398,7 +1398,7 @@ def do_install(modules: list[str], install_pkgs: bool, plat: dict, dry_run: bool
 
     _log(f"\n[bold]{t('symlinks_title')}[/bold]")
     for mod in modules:
-        _log(f"\n  [bold]\\[{mod}][/bold]")
+        _log(f"\n  [bold]{mod}[/bold]")
         install_module(mod, dry_run)
 
     _log(f"\n[bold]{t('overrides_title')}[/bold]")

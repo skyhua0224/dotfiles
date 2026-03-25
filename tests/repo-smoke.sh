@@ -32,4 +32,9 @@ if [[ -e "$REPO_ROOT/bin/__pycache__/setup.cpython-312.pyc" ]]; then
   fail "tracked Python bytecode cache should not live in the repo"
 fi
 
+dry_run_output="$(python3 "$REPO_ROOT/bin/setup.py" --auto --link-only --dry-run)"
+if [[ "$dry_run_output" != *$'\n  zsh\n'* ]]; then
+  fail "plain dry-run output should show module names"
+fi
+
 printf 'ok: repo smoke checks passed\n'
