@@ -145,6 +145,7 @@ python3 ~/dotfiles/bin/setup.py --uninstall --rollback
 
 > `ls` 和 `cd` 的替换**只在交互式 zsh 中生效**。
 > 脚本、Claude Code、Codex 调用的永远是系统原生命令，不受影响。
+> 默认的人类交互终端使用 zoxide 接管 `cd`；Codex / Claude Code 这类 agent shell 会自动退回到 `z` / `zi`，避免命令流被智能跳转干扰。
 > 如果你不想让 zoxide 接管 `cd`，可以在 `~/.config/dotfiles/local.zsh` 里加一行：`export DOTFILES_ZOXIDE_CMD=z`
 
 ### 快捷键
@@ -403,6 +404,7 @@ python3 ~/dotfiles/bin/setup.py --uninstall --dry-run
 | `h` | tldr — quick reference |
 
 > `ls` and `cd` replacements only apply in interactive zsh. Scripts and AI tools always use native system commands.
+> Human-facing interactive terminals use zoxide on `cd` by default; Codex / Claude Code style agent shells automatically fall back to `z` / `zi` to avoid surprising command execution.
 > If you want to keep zoxide on `z` instead, add `export DOTFILES_ZOXIDE_CMD=z` to `~/.config/dotfiles/local.zsh`.
 
 ### Keybindings

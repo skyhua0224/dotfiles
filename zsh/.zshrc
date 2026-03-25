@@ -31,6 +31,23 @@ _dot_source_first() {
   return 1
 }
 
+_dot_is_agent_shell() {
+  [[ -n "${CODEX_SHELL:-}" ]] && return 0
+  [[ -n "${CODEX_THREAD_ID:-}" ]] && return 0
+  [[ -n "${CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:-}" ]] && return 0
+  [[ -n "${CLAUDECODE:-}" ]] && return 0
+
+  local _parent_command=""
+  _parent_command="$(ps -o command= -p "${PPID:-0}" 2>/dev/null || true)"
+  case "$_parent_command" in
+    *Codex*|*codex*|*Claude*|*claude*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 if [[ -z "${DOTFILES_SAFE_MODE:-}" ]] && [[ -o interactive ]] && [[ -t 0 ]] && [[ -t 1 ]]; then
   DOTFILES_TTY_UI=1
 fi
@@ -146,7 +163,15 @@ if (( DOTFILES_TTY_UI )); then
   alias h='tldr'
 
   if command -v zoxide >/dev/null 2>&1; then
-    typeset -g DOTFILES_ZOXIDE_CMD="${DOTFILES_ZOXIDE_CMD:-cd}"
+    local _dot_zoxide_cmd="${DOTFILES_ZOXIDE_CMD:-}"
+    if [[ -z "$_dot_zoxide_cmd" ]]; then
+      if _dot_is_agent_shell; then
+        _dot_zoxide_cmd='z'
+      else
+        _dot_zoxide_cmd='cd'
+      fi
+    fi
+    typeset -g DOTFILES_ZOXIDE_CMD="$_dot_zoxide_cmd"
     eval "$(zoxide init zsh --cmd "$DOTFILES_ZOXIDE_CMD")"
     alias cdd="${DOTFILES_ZOXIDE_CMD}i"
 
