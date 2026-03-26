@@ -43,8 +43,12 @@ curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfile
 4. **检测冲突工具**，自动迁移（备份后替换，可恢复）
 5. 建立配置软链（已有文件自动备份到 `~/.dotfiles-backups/<时间戳>/`）
 6. 通过 Homebrew / pacman + AUR 安装软件包
-7. 安装 npm 全局工具（Claude Code、Codex、Gemini CLI）
-8. 如果选择了 tmux 模块，自动安装 oh-my-tmux
+7. 执行 `mise install`，安装配置里声明的 Node / Python / Ruby / Rust
+8. 安装 npm 全局工具（Claude Code、Codex、Gemini CLI）
+9. 如果选择了 tmux 模块，自动安装 oh-my-tmux
+
+在 macOS 上，Homebrew 步骤会实时显示输出，并默认使用 `brew bundle --verbose --no-upgrade`。
+安装器还会关闭这一步的自动 `brew update`，优先保证把 Brewfile 里的工具装齐，避免初次安装时被整轮升级拖住。
 
 ### 安装模式
 
@@ -61,6 +65,16 @@ python3 ~/dotfiles/bin/setup.py
 ```
 
 `bin/install.sh` 仍然保留，但现在只是兼容入口，内部直接转发到 `setup.py`。
+
+### brew bundle 卡住 / 报错
+
+如果界面长时间不动，以前有一部分原因是安装器把 Homebrew 输出收起来了，看上去像“卡死”；现在已经改成实时输出。
+
+如果你看到 `process has already locked ... .incomplete`，这通常不是普通网络慢，而是 Homebrew 下载锁冲突：
+
+1. 先执行 `pgrep -af brew`，确认是不是还有别的 `brew install` / `brew update` / `brew bundle` 在跑。
+2. 如果已经没有残留 brew 进程，再删除报错里对应的 `.incomplete` 文件。
+3. 重新运行安装器；如果还不稳，可以先单独执行一次 `brew cleanup` 再重试。
 
 ---
 
@@ -347,11 +361,15 @@ curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfile
 4. Detect conflicting tools and offer migration (all backed up first)
 5. Symlink configs (existing files backed up to `~/.dotfiles-backups/<timestamp>/`)
 6. Install packages via Homebrew / pacman + AUR
-7. Install npm globals (Claude Code, Codex, Gemini CLI)
-8. Auto-install oh-my-tmux if tmux module selected
+7. Run `mise install` for the configured Node / Python / Ruby / Rust versions
+8. Install npm globals (Claude Code, Codex, Gemini CLI)
+9. Auto-install oh-my-tmux if tmux module selected
 
-Package output is captured — you see clean `ok / warn` status.
-Full logs saved to `~/.dotfiles-install.log`.
+Homebrew now streams live output during install on macOS.
+The installer uses `brew bundle --verbose --no-upgrade` and disables auto-update for this step so first-time bootstrap is less likely to look frozen.
+Full logs are still saved to `~/.dotfiles-install.log`.
+
+If you hit `process has already locked ... .incomplete`, another Homebrew command is still running or an older interrupted run left a stale download lock behind. Check `pgrep -af brew` first, then remove the matching `.incomplete` file only after you confirm no brew process is left.
 
 ### Conflict migration
 

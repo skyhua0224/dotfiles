@@ -122,6 +122,7 @@ TEXT = {
         "brew_missing":      "✗  未找到 Homebrew，请先安装：https://brew.sh",
         "aur_missing":       "✗  未找到 AUR 助手（yay/paru），跳过：",
         "pkg_missing":       "✗  未找到支持的包管理器",
+        "brew_lock_hint":    "Homebrew 检测到下载锁冲突：通常是另一条 brew 命令还在运行，或上次中断留下了 .incomplete 文件。先执行 `pgrep -af brew` 确认；如果没有残留进程，再删掉对应的 .incomplete 文件后重试。",
         "omt_ok":            "ok   oh-my-tmux 已安装",
         "omt_install":       "→    正在安装 oh-my-tmux…",
         "no_files":          "（模块暂无文件）",
@@ -192,6 +193,7 @@ TEXT = {
         "brew_missing":      "✗  Homebrew not found. Install from https://brew.sh",
         "aur_missing":       "✗  No AUR helper (yay/paru), skipping:",
         "pkg_missing":       "✗  No supported package manager found",
+        "brew_lock_hint":    "Homebrew hit a download lock. Usually another brew command is still running, or an interrupted run left behind an .incomplete file. Run `pgrep -af brew` first; if nothing is left, remove the matching .incomplete file and retry.",
         "omt_ok":            "ok   oh-my-tmux already installed",
         "omt_install":       "→    Installing oh-my-tmux…",
         "no_files":          "(no files in module yet)",
@@ -1269,12 +1271,66 @@ def _write_install_log(cmd: list[str], stdout: str, stderr: str) -> None:
         pass
 
 
-def _run(cmd: list[str], dry_run: bool) -> tuple[int, str, str]:
+def _brew_bundle_plan() -> tuple[list[str], dict[str, str], bool]:
+    cmd = [
+        "brew",
+        "bundle",
+        "--verbose",
+        "--no-upgrade",
+        "--file",
+        str(REPO_ROOT / "packages" / "Brewfile"),
+    ]
+    env = {"HOMEBREW_NO_AUTO_UPDATE": "1"}
+    return cmd, env, True
+
+
+def _brew_bundle_lock_hint(output: str) -> str | None:
+    lowered = output.lower()
+    if "process has already locked" in lowered and ".incomplete" in lowered:
+        return t("brew_lock_hint")
+    return None
+
+
+def _mise_install_plan() -> tuple[list[str], bool]:
+    return ["mise", "install", "-y"], True
+
+
+def _run(
+    cmd: list[str],
+    dry_run: bool,
+    *,
+    env: dict[str, str] | None = None,
+    stream_output: bool = False,
+) -> tuple[int, str, str]:
     _log("  [dim]$[/dim]  " + " ".join(cmd))
     if dry_run:
         return 0, "", ""
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if stream_output:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                env=run_env,
+            )
+            output_lines: list[str] = []
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                output_lines.append(line)
+                sys.stdout.write(line)
+                sys.stdout.flush()
+            proc.stdout.close()
+            rc = proc.wait()
+            stdout = "".join(output_lines)
+            _write_install_log(cmd, stdout, "")
+            return rc, stdout, ""
+
+        proc = subprocess.run(cmd, capture_output=True, text=True, env=run_env)
     except KeyboardInterrupt:
         _log(f"\n[yellow]{t('aborted')}[/yellow]")
         raise SystemExit(130)
@@ -1332,10 +1388,19 @@ def install_packages(p: dict, dry_run: bool) -> None:
         if not p["has_brew"]:
             _log(f"  [yellow]{t('brew_missing')}[/yellow]")
         else:
-            rc, _, _ = _run(["brew", "bundle", "--file", str(REPO_ROOT / "packages" / "Brewfile")], dry_run)
+            brew_cmd, brew_env, brew_stream = _brew_bundle_plan()
+            rc, stdout, stderr = _run(
+                brew_cmd,
+                dry_run,
+                env=brew_env,
+                stream_output=brew_stream,
+            )
             if rc == 0:
                 _log("  [green]ok[/green]   brew bundle")
             else:
+                hint = _brew_bundle_lock_hint("\n".join(part for part in (stdout, stderr) if part))
+                if hint:
+                    _log(f"  [yellow]hint[/yellow] {hint}")
                 _log(f"  [yellow]warn[/yellow] brew bundle failed, details: {INSTALL_LOG}")
     elif p["is_linux"] and p["has_pacman"]:
         plist = REPO_ROOT / "packages" / "cachyos-pacman.txt"
@@ -1359,6 +1424,16 @@ def install_packages(p: dict, dry_run: bool) -> None:
                 _log(f"  [yellow]{t('aur_missing')} {', '.join(apkgs)}[/yellow]")
     else:
         _log(f"  [yellow]{t('pkg_missing')}[/yellow]")
+
+    mise_config = Path.home() / ".config" / "mise" / "config.toml"
+    if mise_config.exists() and (dry_run or shutil.which("mise")):
+        mise_cmd, mise_stream = _mise_install_plan()
+        _log("\n  [dim]mise[/dim]")
+        rc, _, _ = _run(mise_cmd, dry_run, stream_output=mise_stream)
+        if rc == 0:
+            _log("  [green]ok[/green]   mise runtimes")
+        else:
+            _log(f"  [yellow]warn[/yellow] mise install failed, details: {INSTALL_LOG}")
 
     npm_list = REPO_ROOT / "packages" / "npm-global.txt"
     if npm_list.exists() and shutil.which("npm"):
