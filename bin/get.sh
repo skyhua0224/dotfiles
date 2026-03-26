@@ -113,14 +113,18 @@ ensure_python3() {
 ensure_git
 ensure_python3
 
-# ── ensure rich ───────────────────────────────────────────────────────────────
+# ── optional python extras ────────────────────────────────────────────────────
 header "Python deps"
 if python3 -c "import rich" 2>/dev/null; then
   ok "rich already available"
 else
-  info "Installing rich (required for installer UI)..."
-  python3 -m pip install --quiet --user rich
-  ok "rich installed"
+  info "Trying to install rich for a nicer installer UI..."
+  if python3 -m pip install --quiet --user rich >/dev/null 2>&1; then
+    ok "rich installed"
+  else
+    warn "Could not install rich automatically (PEP 668, network, or pip policy)."
+    warn "continuing with plain-text installer UI"
+  fi
 fi
 
 # ── clone or update ───────────────────────────────────────────────────────────
