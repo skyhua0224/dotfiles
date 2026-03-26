@@ -265,11 +265,11 @@ def _omz_installed() -> bool:
 ALL_CONFLICT_RULES: list[tuple] = [
     # (tool, replaces_with, detect_fn, label_zh, label_en, desc_zh, desc_en, color)
     (
-        "asdf", "mise", lambda: bool(shutil.which("asdf")),
+        "asdf", "mise", lambda: bool(shutil.which("asdf")) or (Path.home() / ".tool-versions").exists(),
         "asdf  →  mise",
         "asdf  →  mise",
-        "mise 直接读取 .tool-versions，已安装的配置零损失迁移。",
-        "mise reads .tool-versions natively — zero-loss migration.",
+        "旧的 ~/.tool-versions 会备份移走，并把可识别版本迁到 mise 本地覆盖文件，避免 asdf 专用写法继续干扰 mise。",
+        "Legacy ~/.tool-versions is backed up and migrated into a local mise override so asdf-only syntax stops interfering with mise.",
         "#60A5FA",
     ),
     (
@@ -1175,6 +1175,78 @@ def scaffold_overrides(dry_run: bool) -> None:
         if src.exists():
             copy_if_missing(src, dest, dry_run)
 
+
+SHARED_MISE_TOOLS = {"node", "python", "ruby", "rust"}
+
+
+def _parse_legacy_tool_versions(lines: list[str]) -> tuple[dict[str, str], list[str]]:
+    entries: dict[str, str] = {}
+    notes: list[str] = []
+    for raw in lines:
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        tool = parts[0]
+        version = parts[1]
+        if tool == "nodejs":
+            tool = "node"
+        if tool == "java" and version.startswith("adoptopenjdk-"):
+            migrated = "temurin-" + version[len("adoptopenjdk-"):]
+            notes.append(f"java {version} -> {migrated}")
+            version = migrated
+        if version.startswith("-"):
+            notes.append(f"skip invalid {tool} version: {version}")
+            continue
+        entries[tool] = version
+    return entries, notes
+
+
+def _render_legacy_mise_override(entries: dict[str, str]) -> str:
+    extras = [(tool, version) for tool, version in entries.items() if tool not in SHARED_MISE_TOOLS]
+    if not extras:
+        return ""
+    lines = [
+        "# Generated from legacy ~/.tool-versions during asdf -> mise migration.",
+        "# Safe to edit or delete after you move any machine-specific tools elsewhere.",
+        "[tools]",
+    ]
+    for tool, version in extras:
+        lines.append(f'{tool} = "{version}"')
+    return "\n".join(lines) + "\n"
+
+
+def _migrate_legacy_tool_versions(dry_run: bool) -> None:
+    src = Path.home() / ".tool-versions"
+    if not src.exists():
+        return
+
+    lines = src.read_text().splitlines()
+    entries, notes = _parse_legacy_tool_versions(lines)
+    override_path = Path.home() / ".config" / "mise" / "conf.d" / "10-legacy-asdf.toml"
+    override_text = _render_legacy_mise_override(entries)
+
+    if dry_run:
+        if override_text:
+            _log(f"    [dim]dry[/dim]  .tool-versions -> {override_path}")
+        _log("    [dim]dry[/dim]  backup ~/.tool-versions")
+        return
+
+    if override_text and not override_path.exists():
+        override_path.parent.mkdir(parents=True, exist_ok=True)
+        override_path.write_text(override_text)
+        _log(f"    [cyan]cp[/cyan]   .tool-versions extras -> {override_path}")
+    elif override_text:
+        _log(f"    [dim]keep[/dim] {override_path}")
+
+    backup_target = _get_backup_root() / ".tool-versions.asdf"
+    shutil.move(str(src), str(backup_target))
+    _log(f"    [cyan]mv[/cyan]   .tool-versions -> {backup_target}")
+    for note in notes:
+        _log(f"    [dim]note[/dim] {note}")
+
 def _setup_oh_my_tmux(dry_run: bool) -> None:
     tmux_dir  = Path.home() / ".tmux"
     tmux_conf = Path.home() / ".tmux.conf"
@@ -1199,25 +1271,7 @@ def apply_conflict_resolution(conflicts: list[ConflictInfo], *, dry_run: bool) -
         _log(f"    [dim]{c.desc()}[/dim]")
 
         if c.tool == "asdf":
-            src = Path.home() / ".tool-versions"
-            dst = Path.home() / ".config" / "mise" / "config.toml"
-            if src.exists() and not dry_run:
-                # keep source; no destructive move needed
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                if not dst.exists():
-                    lines = [ln.strip() for ln in src.read_text().splitlines() if ln.strip() and not ln.strip().startswith("#")]
-                    mapped: list[str] = []
-                    for line in lines:
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            tool = parts[0]
-                            ver = parts[1]
-                            if tool == "nodejs":
-                                tool = "node"
-                            mapped.append(f'{tool} = "{ver}"')
-                    if mapped:
-                        dst.write_text("[tools]\n" + "\n".join(mapped) + "\n")
-                        _log("    [cyan]cp[/cyan]   .tool-versions -> .config/mise/config.toml")
+            _migrate_legacy_tool_versions(dry_run)
 
 
 def run_restore(*, dry_run: bool) -> None:
@@ -1291,8 +1345,8 @@ def _brew_bundle_lock_hint(output: str) -> str | None:
     return None
 
 
-def _mise_install_plan() -> tuple[list[str], bool]:
-    return ["mise", "install", "-y"], True
+def _mise_install_plan() -> tuple[list[str], dict[str, str], bool]:
+    return ["mise", "install", "-y"], {"MISE_JOBS": "1"}, True
 
 
 def _run(
@@ -1427,9 +1481,9 @@ def install_packages(p: dict, dry_run: bool) -> None:
 
     mise_config = Path.home() / ".config" / "mise" / "config.toml"
     if mise_config.exists() and (dry_run or shutil.which("mise")):
-        mise_cmd, mise_stream = _mise_install_plan()
+        mise_cmd, mise_env, mise_stream = _mise_install_plan()
         _log("\n  [dim]mise[/dim]")
-        rc, _, _ = _run(mise_cmd, dry_run, stream_output=mise_stream)
+        rc, _, _ = _run(mise_cmd, dry_run, env=mise_env, stream_output=mise_stream)
         if rc == 0:
             _log("  [green]ok[/green]   mise runtimes")
         else:

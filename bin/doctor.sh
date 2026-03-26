@@ -7,7 +7,6 @@ MANAGED_FILES=(
   ".zshrc"
   ".zprofile"
   ".gitconfig"
-  ".tool-versions"
   ".config/starship.toml"
   ".config/atuin/config.toml"
   ".config/mise/config.toml"
@@ -117,6 +116,12 @@ else
 fi
 
 printf '\nLegacy leftovers\n'
+if [[ -f "${HOME}/.tool-versions" ]]; then
+  printf '  warn %s still exists and may override mise with legacy asdf syntax\n' "${HOME}/.tool-versions"
+else
+  printf '  ok   ~/.tool-versions not present\n'
+fi
+
 if [[ ":${PATH}:" == *":${HOME}/.asdf/shims:"* ]]; then
   printf '  warn PATH still includes %s\n' "${HOME}/.asdf/shims"
 else
@@ -151,7 +156,8 @@ printf '\nLocal overrides\n'
 for file in \
   "${HOME}/.gitconfig.local" \
   "${HOME}/.config/dotfiles/local.zsh" \
-  "${HOME}/.config/dotfiles/local.zprofile"; do
+  "${HOME}/.config/dotfiles/local.zprofile" \
+  "${HOME}/.config/mise/conf.d/10-legacy-asdf.toml"; do
   if [[ -e "$file" ]]; then
     printf '  ok   %s\n' "$file"
   else

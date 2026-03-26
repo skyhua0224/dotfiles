@@ -84,7 +84,7 @@ python3 ~/dotfiles/bin/setup.py
 
 | 检测到 | 替换为 | 说明 |
 |--------|--------|------|
-| `asdf` | `mise` | mise 直接读取 `.tool-versions`，零损失迁移 |
+| `asdf` | `mise` | 备份旧 `~/.tool-versions`，把可识别工具迁到 `mise` 本地 override，避开 asdf 专用参数 |
 | `nvm` | `mise` | mise 接管 Node 版本管理，读取 `.nvmrc` |
 | `pyenv` | `mise` | mise 接管 Python 版本管理，读取 `.python-version` |
 | `rbenv` / `rvm` | `mise` | mise 接管 Ruby 版本管理，读取 `.ruby-version` |
@@ -92,6 +92,9 @@ python3 ~/dotfiles/bin/setup.py
 
 所有被替换的配置文件在动前一律备份至 `~/.dotfiles-backups/<时间戳>/`。
 交互式安装会询问是否处理冲突，也可选跳过。
+
+如果检测到旧的 `~/.tool-versions`，安装器会把它备份移走，避免 `mise` 继续把 `--home` 之类的 asdf 专用写法当成版本号。
+像 `pnpm`、`java` 这类不在共享仓库里的额外工具，会迁到 `~/.config/mise/conf.d/10-legacy-asdf.toml`。
 
 ---
 
@@ -302,6 +305,7 @@ git show HEAD   # 单次提交 diff
 | `~/.config/dotfiles/local.zsh` | 个人 zsh 配置 |
 | `~/.config/dotfiles/local.zprofile` | 个人 zprofile 配置 |
 | `~/.config/dotfiles/hosts/<hostname>.zsh` | 机器专属配置 |
+| `~/.config/mise/conf.d/10-legacy-asdf.toml` | 从旧 `asdf` 全局版本文件迁过来的额外运行时 |
 
 ---
 
@@ -377,7 +381,7 @@ Detected automatically; you choose to migrate or skip:
 
 | Detected | Replaced by | Notes |
 |----------|-------------|-------|
-| `asdf` | `mise` | `.tool-versions` kept, converted to mise format |
+| `asdf` | `mise` | backup legacy `~/.tool-versions` and migrate recognized tools into a local mise override |
 | `nvm` | `mise` | reads `.nvmrc` |
 | `pyenv` | `mise` | reads `.python-version` |
 | `rbenv` / `rvm` | `mise` | reads `.ruby-version` |
