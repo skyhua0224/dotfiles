@@ -1,61 +1,35 @@
 # dotfiles
 
 [![GitHub last commit](https://img.shields.io/github/last-commit/skyhua0224/dotfiles?style=flat-square)](https://github.com/skyhua0224/dotfiles/commits/main)
-[![macOS](https://img.shields.io/badge/macOS-13%2B-000000?style=flat-square&logo=apple)](https://github.com/skyhua0224/dotfiles)
-[![CachyOS](https://img.shields.io/badge/CachyOS%20%2F%20Arch-pacman-1793D1?style=flat-square&logo=arch-linux)](https://github.com/skyhua0224/dotfiles)
-[![Shell](https://img.shields.io/badge/shell-zsh-F15A24?style=flat-square)](https://github.com/skyhua0224/dotfiles/tree/main/zsh)
-[![Prompt](https://img.shields.io/badge/prompt-Starship-DD0B78?style=flat-square)](https://github.com/starship/starship)
-[![Runtime](https://img.shields.io/badge/runtime-mise-7A5AF8?style=flat-square)](https://github.com/jdx/mise)
+[![macOS](https://img.shields.io/badge/macOS-Homebrew-000000?style=flat-square&logo=apple)](https://github.com/skyhua0224/dotfiles)
+[![Linux](https://img.shields.io/badge/Linux-pacman-1793D1?style=flat-square&logo=arch-linux)](https://github.com/skyhua0224/dotfiles)
+[![Shell](https://img.shields.io/badge/Shell-zsh-F15A24?style=flat-square)](https://github.com/skyhua0224/dotfiles/tree/main/zsh)
+[![Prompt](https://img.shields.io/badge/Prompt-Starship-DD0B78?style=flat-square)](https://github.com/starship/starship)
+[![Runtime](https://img.shields.io/badge/Runtime-mise-7A5AF8?style=flat-square)](https://github.com/jdx/mise)
 
-我的终端与 shell 环境配置，支持 macOS 和 CachyOS / Arch Linux。
+中文文档。English version: [README_EN.md](./README_EN.md)
 
-> 链接说明：
-> - 项目页和文档页统一使用 GitHub 原链。
-> - 下载命令额外提供国内镜像，目前实测可用的是 `ghfast.top` 的 `raw.githubusercontent.com` / tarball 代理。
+面向 macOS 与 pacman 系 Linux 的终端 / CLI 配置。
+
+- 管理共享的 shell、git、prompt、runtime、tmux、Neovim 配置
+- 不管理密钥、SSH、个人 Git 身份、GUI 应用状态与机器私有数据
+- 安装方式以软链接为主，支持备份、恢复、卸载与回滚
 
 ---
 
 ## 安装
 
-```bash
-# 全自动（GitHub 原链）
-curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
+### 交互式安装
 
-# 交互式（GitHub 原链）
+```bash
 curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
 ```
 
-国内镜像（同一脚本）：
+### 全自动安装
 
 ```bash
-# 全自动（国内镜像）
-curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
-
-# 交互式（国内镜像）
-curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
+curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
 ```
-
-### 安装器做了什么
-
-1. 检测平台（macOS / CachyOS / Arch / Linux）
-2. 如果缺少 `git` 或 `python3` 则自动安装
-3. 克隆本仓库到 `~/dotfiles`
-4. **检测冲突工具**，自动迁移（备份后替换，可恢复）
-5. 建立配置软链（已有文件自动备份到 `~/.dotfiles-backups/<时间戳>/`）
-6. 通过 Homebrew / pacman + AUR 安装软件包
-7. 执行 `mise install`，安装配置里声明的 Node / Python / Ruby / Rust
-8. 安装 npm 全局工具（Claude Code、Codex、Gemini CLI）
-9. 如果选择了 tmux 模块，自动安装 oh-my-tmux
-
-在 macOS 上，Homebrew 步骤会实时显示输出，并默认使用 `brew bundle --verbose --no-upgrade`。
-安装器还会关闭这一步的自动 `brew update`，优先保证把 Brewfile 里的工具装齐，避免初次安装时被整轮升级拖住。
-
-### 安装模式
-
-| 命令 | 模式 |
-|------|------|
-| `curl ... \| bash` | 交互式：先选语言，再勾选模块（全部默认选中） |
-| `curl ... \| bash -s -- --auto` | 全自动：识别平台，直接安装全部适配模块 |
 
 ### 手动安装
 
@@ -64,422 +38,473 @@ git clone https://github.com/skyhua0224/dotfiles ~/dotfiles
 python3 ~/dotfiles/bin/setup.py
 ```
 
-`bin/install.sh` 仍然保留，但现在只是兼容入口，内部直接转发到 `setup.py`。
-
-### brew bundle 卡住 / 报错
-
-如果界面长时间不动，以前有一部分原因是安装器把 Homebrew 输出收起来了，看上去像“卡死”；现在已经改成实时输出。
-
-如果你看到 `process has already locked ... .incomplete`，这通常不是普通网络慢，而是 Homebrew 下载锁冲突：
-
-1. 先执行 `pgrep -af brew`，确认是不是还有别的 `brew install` / `brew update` / `brew bundle` 在跑。
-2. 如果已经没有残留 brew 进程，再删除报错里对应的 `.incomplete` 文件。
-3. 重新运行安装器；如果还不稳，可以先单独执行一次 `brew cleanup` 再重试。
-
----
-
-## 冲突迁移
-
-安装器会自动检测以下已有工具，并提供无损替换到 mise / 独立插件体系：
-
-| 检测到 | 替换为 | 说明 |
-|--------|--------|------|
-| `asdf` | `mise` | 备份旧 `~/.tool-versions`，把可识别工具迁到 `mise` 本地 override，避开 asdf 专用参数 |
-| `nvm` | `mise` | mise 接管 Node 版本管理，读取 `.nvmrc` |
-| `pyenv` | `mise` | mise 接管 Python 版本管理，读取 `.python-version` |
-| `rbenv` / `rvm` | `mise` | mise 接管 Ruby 版本管理，读取 `.ruby-version` |
-| `oh-my-zsh` | 独立 zsh 插件 | 功能等价；autosuggestions、syntax-highlight、history-search |
-
-所有被替换的配置文件在动前一律备份至 `~/.dotfiles-backups/<时间戳>/`。
-交互式安装会询问是否处理冲突，也可选跳过。
-
-如果检测到旧的 `~/.tool-versions`，安装器会把它备份移走，避免 `mise` 继续把 `--home` 之类的 asdf 专用写法当成版本号。
-像 `pnpm`、`java` 这类不在共享仓库里的额外工具，会迁到 `~/.config/mise/conf.d/10-legacy-asdf.toml`。
-
----
-
-## 恢复 / 卸载
-
-### 恢复历史备份
-
-```bash
-python3 ~/dotfiles/bin/setup.py --restore
-```
-
-列出所有历史备份快照，选择一个即可恢复。预览用：
-
-```bash
-python3 ~/dotfiles/bin/setup.py --restore --dry-run
-```
-
-### 卸载
-
-移除所有 dotfiles 托管的软链（不影响其他文件）：
-
-```bash
-python3 ~/dotfiles/bin/setup.py --uninstall
-```
-
-卸载并同时恢复最近一次备份：
-
-```bash
-python3 ~/dotfiles/bin/setup.py --uninstall --rollback
-```
+`bin/get.sh` 会先检查 `git` 与 `python3`，然后克隆或更新仓库，最后转交给 `bin/setup.py`。
 
 ---
 
 ## 支持平台
 
-| 平台 | Shell | 包管理器 |
-|------|-------|---------|
-| macOS 13+ | zsh | Homebrew |
-| CachyOS / Arch Linux | zsh | pacman + AUR（yay / paru）|
-| 其他 Linux（pacman） | zsh | pacman |
+| 平台 | 包管理器 | 状态 |
+| --- | --- | --- |
+| macOS | Homebrew | 官方支持 |
+| Arch / CachyOS / 其他 pacman 系 Linux | pacman + AUR helper | 官方支持 |
+| 其他 Unix-like | 仅软链层 | 尽力支持 |
 
----
-
-## Shell 配置
-
-### 命令别名
-
-| 命令 | 说明 |
-|------|------|
-| `ls` | eza — 图标 + 目录优先 |
-| `ll` | eza — 详细列表，含 git 状态和时间戳 |
-| `la` | eza — 详细列表，含隐藏文件 |
-| `lt` | eza — 树形视图（3 层） |
-| `cd` | zoxide — 智能跳转，自动学习历史 |
-| `cdd` | zoxide — fzf 交互式目录选择 |
-| `pcd` | 原生 `cd` — 保留 builtin 行为，适合需要精确参数时使用 |
-| `b` | bat — 语法高亮查看文件（简洁模式） |
-| `bp` | bat — 完整模式，含行号和标题 |
-| `rg` | ripgrep — 智能大小写，跟随符号链接 |
-| `grep` | grep 带颜色 |
-| `dfu` | duf — 磁盘空间概览 |
-| `duu` | dust — 目录大小分布 |
-| `psg` | procs — 进程树 |
-| `h` | tldr — 命令速查（中文） |
-
-> `ls` 和 `cd` 的替换**只在交互式 zsh 中生效**。
-> 脚本、Claude Code、Codex 调用的永远是系统原生命令，不受影响。
-> 默认的人类交互终端使用 zoxide 接管 `cd`；Codex / Claude Code 这类 agent shell 会自动退回到 `z` / `zi`，避免命令流被智能跳转干扰。
-> 如果你不想让 zoxide 接管 `cd`，可以在 `~/.config/dotfiles/local.zsh` 里加一行：`export DOTFILES_ZOXIDE_CMD=z`
-
-### 快捷键
-
-| 按键 | 功能 |
-|------|------|
-| `↑` / `↓` | 按当前行前缀搜索历史（zsh-history-substring-search） |
-| `Ctrl-R` | atuin 全局模糊历史搜索 |
-| `Tab` | fzf-tab 模糊补全面板 |
-
----
-
-## Git
-
-使用 [delta](https://github.com/dandavison/delta) 作为 diff pager，支持左右对比、语法高亮、行号显示。
+如果只需要软链接管，不安装系统包：
 
 ```bash
-git diff        # 左右对比 diff
-git log -p      # 带高亮的提交历史
-git show HEAD   # 单次提交 diff
+python3 ~/dotfiles/bin/setup.py --link-only
 ```
 
 ---
 
-## tmux — oh-my-tmux
+## Usage
 
-基于 [oh-my-tmux](https://github.com/gpakosz/.tmux)。
-选择 tmux 模块时，安装器自动克隆 oh-my-tmux 并建立软链。
-自定义主题和设置在 `tmux/.tmux.conf.local` 中。
+### 常用命令
 
-### Shell helper
+| 命令 | 作用 |
+| --- | --- |
+| `ls` | `eza --icons --group-directories-first` |
+| `ll` | 详细列表，含 git 状态与时间 |
+| `la` | 含隐藏文件的详细列表 |
+| `lt` | 3 层树形视图 |
+| `b` | `bat --style=plain --paging=never` |
+| `bp` | `bat --style=full` |
+| `rg keyword` | 全局搜索 |
+| `cdd` | `zoxide` 交互式目录跳转 |
+| `pcd` | 原生 `cd` |
+| `ta [session]` | 进入或创建 tmux session，默认 `main` |
+| `tls` | 列出 tmux sessions |
+| `treset` | 重置 tmux server |
+| `nvim` | 打开 Neovim |
 
-| 命令 | 说明 |
-|------|------|
-| `ta [session]` | 进入 tmux；不存在就创建，默认 session 名为 `main` |
-| `tls` | 列出当前 tmux sessions |
-| `treset` | 杀掉旧 tmux server，适合改完 shell / tmux 配置后重置环境 |
+### Git
 
-### 快捷键
+默认使用 `delta` 作为 pager：
 
-| 按键 | 功能 |
-|------|------|
-| `Ctrl-b` | Prefix 键 |
-| `<prefix> \|` | 垂直分割面板 |
-| `<prefix> -` | 水平分割面板 |
-| `<prefix> h/j/k/l` | vim 风格切换面板 |
-| `<prefix> H/J/K/L` | 调整面板大小 |
-| `<prefix> Tab` | 切换到上一个窗口 |
-| `<prefix> Enter` | 进入复制模式 |
-| `<prefix> m` | 切换鼠标模式 |
-| `<prefix> e` | 编辑 `.tmux.conf.local` 并重载 |
-| `<prefix> r` | 重载配置 |
-
-默认开启鼠标支持。
-
-### 简短排障
-
-如果你看到 `open terminal failed: not a terminal`，先执行一次 `treset`，再重新进入 `tmux` 或 `ta`。
-
-这通常不是新 shell 本身坏了，而是旧 tmux server 还活着，继续拿着上一版终端环境服务新的 client。
-
----
-
-## Neovim — LazyVim
-
-基于 [LazyVim](https://github.com/LazyVim/LazyVim)。配置在 `nvim/.config/nvim/`。
-当前保持 LazyVim 基础结构，先把环境拉起来，个人插件和桌面级定制后面再继续加。
-
-### 更新插件
-
+```bash
+git diff
+git log -p
+git show HEAD
 ```
+
+### Runtime
+
+统一使用 `mise` 管理运行时：
+
+```bash
+mise install
+mise ls
+```
+
+### Neovim
+
+同步插件：
+
+```vim
 :Lazy sync
 ```
 
-### 常用快捷键
+## 管理范围
 
-`<leader>` = `Space`
+安装器实际管理以下模块：
 
-| 按键 | 功能 |
-|------|------|
-| `<leader>ff` | 查找文件 |
-| `<leader>fg` | 全局搜索 |
-| `<leader>fb` | 切换 buffer |
-| `<leader>fr` | 最近文件 |
-| `<leader>e` | 文件树 |
-| `<leader>gg` | LazyGit |
-| `<leader>l` | Lazy 插件管理器 |
-| `<leader>cm` | Mason（LSP / linter 管理） |
-| `K` | 悬浮文档 |
-| `gd` | 跳转到定义 |
-| `gr` | 查看引用 |
-| `<leader>ca` | 代码操作 |
+- `zsh`
+- `git`
+- `starship`
+- `atuin`
+- `mise`
+- `nvim`
+- `tmux`
 
-完整快捷键：`:h lazyvim-keymaps` 或 [LazyVim keymaps](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua)
+### 配置来源
 
----
+| 模块 | 上游 / 基础 | 说明 |
+| --- | --- | --- |
+| `zsh` | 仓库自定义 | 组合 `zoxide`、`atuin`、`fzf-tab`、`zsh-autosuggestions`、`zsh-history-substring-search`、`carapace` 等工具 |
+| `git` | 仓库自定义 | 以 `delta` 作为 pager 和 diff filter |
+| `starship` | [starship](https://github.com/starship/starship) | Prompt 配置 |
+| `atuin` | [atuin](https://github.com/atuinsh/atuin) | shell history 配置 |
+| `mise` | [mise](https://github.com/jdx/mise) | runtime 版本声明 |
+| `nvim` | [LazyVim](https://github.com/LazyVim/LazyVim) | Neovim 基础发行版 |
+| `tmux` | [oh-my-tmux](https://github.com/gpakosz/.tmux) | tmux 主配置与自定义层 |
 
-## AI CLI 工具
+### 软件包清单
 
-通过 npm 全局安装，需要 Node.js（由 mise 管理）。
+| 文件 | 作用 |
+| --- | --- |
+| `packages/Brewfile` | Homebrew 包清单 |
+| `packages/cachyos-pacman.txt` | pacman 包清单 |
+| `packages/cachyos-aur.txt` | AUR 包清单 |
+| `packages/npm-global.txt` | npm 全局 CLI 清单 |
 
-| 工具 | 命令 | 说明 |
-|------|------|------|
-| [Claude Code](https://github.com/anthropics/claude-code) | `claude` | Anthropic 官方 CLI |
-| [Codex](https://github.com/openai/codex) | `codex` | OpenAI 编程助手 CLI |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `gemini` | Google Gemini CLI |
+### 不纳入仓库的内容
 
----
-
-## Prompt — Starship
-
-使用 Starship 官方 `Gruvbox Rainbow` preset，powerline 风格。配置在 `starship/.config/starship.toml`。
-
-显示内容：操作系统图标 · 用户名 · 当前目录 · git 分支/状态 · 语言版本 · 时间
-
----
-
-## 运行时版本管理 — mise
-
-| 运行时 | 版本 |
-|--------|------|
-| Node.js | 24.6.0 |
-| Python | 3.12.3 |
-| Ruby | 3.3.1 |
-| Rust | 1.78.0 |
-
-配置在 `mise/.config/mise/config.toml`，同时兼容 `.tool-versions` 和 `.nvmrc` / `.python-version` / `.ruby-version` 格式。
-原来使用 asdf / nvm / pyenv 的用户无需手动迁移，安装器自动处理。
+- `~/.ssh`
+- token / API key / 证书
+- `~/.gitconfig.local` 中的个人身份信息
+- 主机专属路径、环境变量、别名
+- GUI 应用状态目录
 
 ---
 
-## 本地覆盖
+## 安装器行为
 
-共享配置提交进仓库，个人差异留在本地不跟踪。
-安装器从模板自动生成以下文件（如不存在）：
+主安装器是 `bin/setup.py`。
 
-| 文件 | 用途 |
-|------|------|
-| `~/.gitconfig.local` | 姓名、邮箱、签名 key |
-| `~/.config/dotfiles/local.zsh` | 个人 zsh 配置 |
-| `~/.config/dotfiles/local.zprofile` | 个人 zprofile 配置 |
-| `~/.config/dotfiles/hosts/<hostname>.zsh` | 机器专属配置 |
-| `~/.config/mise/conf.d/10-legacy-asdf.toml` | 从旧 `asdf` 全局版本文件迁过来的额外运行时 |
+| 命令 | 作用 |
+| --- | --- |
+| `python3 ~/dotfiles/bin/setup.py` | 交互式安装 |
+| `python3 ~/dotfiles/bin/setup.py --auto` | 自动安装当前平台全部模块 |
+| `python3 ~/dotfiles/bin/setup.py --link-only` | 只建软链 |
+| `python3 ~/dotfiles/bin/setup.py --pkgs-only` | 只装系统包 |
+| `python3 ~/dotfiles/bin/setup.py --restore` | 恢复备份 |
+| `python3 ~/dotfiles/bin/setup.py --uninstall` | 移除托管软链 |
+| `python3 ~/dotfiles/bin/setup.py --uninstall --rollback` | 卸载并恢复最近备份 |
+| `python3 ~/dotfiles/bin/setup.py --auto --dry-run` | 预览操作，不写入 |
 
----
+实际流程：
 
-## Nix（可选）
+1. 检测平台与包管理器
+2. 检测旧方案冲突
+3. 备份已有文件
+4. 建立软链
+5. 生成本地 override 模板
+6. 安装系统包
+7. 执行 `mise install -y`
+8. 安装 npm globals
+9. 进行环境检查
 
-`flake.nix` 提供包含所有 CLI 工具的 dev shell，macOS 和 Linux 行为一致：
+备份目录：
 
-```bash
-nix develop
-```
-
-不替代 symlink 安装方式，适合在新机器上快速拉起工具链。
-
----
-
-## 环境自检
-
-```bash
-python3 ~/dotfiles/bin/setup.py --link-only --dry-run   # 预览软链
-python3 ~/dotfiles/bin/setup.py --restore --dry-run     # 预览恢复
-python3 ~/dotfiles/bin/setup.py --uninstall --dry-run   # 预览卸载
-~/dotfiles/bin/doctor.sh                                  # 检查当前状态
+```text
+~/.dotfiles-backups/<timestamp>/
 ```
 
 ---
 
-<details>
-<summary>English README</summary>
+## 包管理与安装细节
 
-## dotfiles
+### macOS
 
-My terminal and shell environment for macOS and CachyOS / Arch Linux.
-
-### Install
+安装器会执行：
 
 ```bash
-# Fully automatic (GitHub)
-curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash -s -- --auto
-
-# Interactive (GitHub)
-curl -sL https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
-
-# China mirror
-curl -sL https://ghfast.top/https://raw.githubusercontent.com/skyhua0224/dotfiles/main/bin/get.sh | bash
+brew bundle --verbose --no-upgrade --file=packages/Brewfile
 ```
 
-| Mode | Behaviour |
-|------|-----------|
-| default | Language → conflict check → module picker (all pre-checked) → packages → confirm |
-| `--auto` | Detect platform, auto-resolve conflicts, install everything |
-
-### What the installer does
-
-1. Detect platform (macOS / CachyOS / Arch / Linux)
-2. Install `git` / `python3` if missing
-3. Clone this repo to `~/dotfiles`
-4. Detect conflicting tools and offer migration (all backed up first)
-5. Symlink configs (existing files backed up to `~/.dotfiles-backups/<timestamp>/`)
-6. Install packages via Homebrew / pacman + AUR
-7. Run `mise install` for the configured Node / Python / Ruby / Rust versions
-8. Install npm globals (Claude Code, Codex, Gemini CLI)
-9. Auto-install oh-my-tmux if tmux module selected
-
-Homebrew now streams live output during install on macOS.
-The installer uses `brew bundle --verbose --no-upgrade` and disables auto-update for this step so first-time bootstrap is less likely to look frozen.
-Full logs are still saved to `~/.dotfiles-install.log`.
-
-If you hit `process has already locked ... .incomplete`, another Homebrew command is still running or an older interrupted run left a stale download lock behind. Check `pgrep -af brew` first, then remove the matching `.incomplete` file only after you confirm no brew process is left.
-
-### Conflict migration
-
-Detected automatically; you choose to migrate or skip:
-
-| Detected | Replaced by | Notes |
-|----------|-------------|-------|
-| `asdf` | `mise` | backup legacy `~/.tool-versions` and migrate recognized tools into a local mise override |
-| `nvm` | `mise` | reads `.nvmrc` |
-| `pyenv` | `mise` | reads `.python-version` |
-| `rbenv` / `rvm` | `mise` | reads `.ruby-version` |
-| `oh-my-zsh` | standalone plugins | autosuggestions, syntax-highlight, history-search |
-
-All replaced files are backed up before any changes.
-
-### Restore and uninstall
+并设置：
 
 ```bash
-# Pick a backup snapshot and restore it
-python3 ~/dotfiles/bin/setup.py --restore
-
-# Remove all managed symlinks
-python3 ~/dotfiles/bin/setup.py --uninstall
-
-# Remove symlinks and restore latest backup
-python3 ~/dotfiles/bin/setup.py --uninstall --rollback
-
-# Preview any of the above without writing
-python3 ~/dotfiles/bin/setup.py --restore --dry-run
-python3 ~/dotfiles/bin/setup.py --uninstall --dry-run
+HOMEBREW_NO_AUTO_UPDATE=1
 ```
 
-### Aliases
+### pacman 系 Linux
 
-| Command | Description |
-|---------|-------------|
-| `ls` | eza — icons, dirs first |
-| `ll` | eza — detailed with git status |
-| `la` | eza — detailed, show hidden |
-| `lt` | eza — tree view (3 levels) |
-| `cd` | zoxide — smart directory jump |
-| `cdd` | zoxide — interactive fuzzy picker |
-| `pcd` | native `cd` — keeps the builtin behavior for exact flag handling |
-| `b` | bat — plain syntax-highlighted view |
-| `bp` | bat — full view with line numbers |
-| `rg` | ripgrep — smart-case search |
-| `dfu` | duf — disk usage |
-| `duu` | dust — directory size breakdown |
-| `psg` | procs — process tree |
-| `h` | tldr — quick reference |
+官方仓库包使用：
 
-> `ls` and `cd` replacements only apply in interactive zsh. Scripts and AI tools always use native system commands.
-> Human-facing interactive terminals use zoxide on `cd` by default; Codex / Claude Code style agent shells automatically fall back to `z` / `zi` to avoid surprising command execution.
-> If you want to keep zoxide on `z` instead, add `export DOTFILES_ZOXIDE_CMD=z` to `~/.config/dotfiles/local.zsh`.
+```bash
+sudo pacman -S --needed --noconfirm ...
+```
 
-### Keybindings
+如果命中过期数据库或镜像 404，安装器会自动执行一次：
 
-| Key | Action |
-|-----|--------|
-| `↑` / `↓` | History search by prefix |
-| `Ctrl-R` | Fuzzy history search (atuin) |
-| `Tab` | Fuzzy completion (fzf-tab) |
+```bash
+sudo pacman -Syy --noconfirm
+```
 
-### tmux keybindings (oh-my-tmux)
+然后重试。
 
-Helper commands:
+AUR helper 选择顺序：
 
-| Command | Action |
-|---------|--------|
-| `ta [session]` | attach to a session or create it, defaulting to `main` |
-| `tls` | list tmux sessions |
-| `treset` | kill the current tmux server so the next launch starts clean |
+1. `DOTFILES_AUR_HELPER`
+2. `paru`
+3. `yay`
 
-| Key | Action |
-|-----|--------|
-| `Ctrl-b` | Prefix |
-| `<prefix> \|` | Split vertical |
-| `<prefix> -` | Split horizontal |
-| `<prefix> h/j/k/l` | Navigate panes |
-| `<prefix> Tab` | Last window |
-| `<prefix> r` | Reload config |
+例如：
 
-If you hit `open terminal failed: not a terminal`, run `treset` once and start tmux again. In practice this usually means an older tmux server is still running with stale terminal state.
+```bash
+DOTFILES_AUR_HELPER=yay python3 ~/dotfiles/bin/setup.py --auto
+```
 
-### Neovim (LazyVim) — `<leader>` = Space
+### npm globals
 
-| Key | Action |
-|-----|--------|
-| `<leader>ff` | Find files |
-| `<leader>fg` | Live grep |
-| `<leader>e` | File explorer |
-| `<leader>gg` | LazyGit |
-| `gd` | Go to definition |
-| `K` | Hover docs |
+`packages/npm-global.txt` 当前包含：
 
-Update plugins: `:Lazy sync`
+- `@anthropic-ai/claude-code`
+- `@openai/codex`
+- `@google/gemini-cli`
 
-### Runtime version management — mise
+如果 npm 因脏目录报 `ENOTEMPTY` 或 rename 错误，安装器会清理 stale 目录后再重试一次。
+
+---
+
+## 运行时管理
+
+当前共享运行时版本：
 
 | Runtime | Version |
-|---------|---------|
-| Node.js | 24.6.0 |
-| Python | 3.12.3 |
-| Ruby | 3.3.1 |
-| Rust | 1.78.0 |
+| --- | --- |
+| Node.js | `24.6.0` |
+| Python | `3.12.3` |
+| Ruby | `3.3.1` |
+| Rust | `1.78.0` |
 
-Config at `mise/.config/mise/config.toml`. Reads `.tool-versions`, `.nvmrc`, `.python-version`, `.ruby-version` natively.
+### `asdf` 迁移
 
-</details>
+如果检测到 `~/.tool-versions`：
+
+- 共享运行时仍以仓库中的 `mise` 配置为准
+- 额外条目会迁移到：
+
+```text
+~/.config/mise/conf.d/10-legacy-asdf.toml
+```
+
+- 原始 `~/.tool-versions` 会移动到备份目录
+
+---
+
+## Shell 行为
+
+### 交互式 zsh
+
+默认启用：
+
+- `starship`
+- `zoxide`
+- `atuin`
+- `fzf-tab`
+- `zsh-autosuggestions`
+- `zsh-history-substring-search`
+- `carapace`
+- 懒加载的 `thefuck`
+
+### `cd` / `zoxide`
+
+默认策略：
+
+- 人类交互终端：`zoxide` 接管 `cd`
+- `agent shell`：保守处理，减少自动化干扰
+
+如果需要保留传统 `cd` 语义，可在本地配置中设置：
+
+```bash
+export DOTFILES_ZOXIDE_CMD=z
+```
+
+建议写入：
+
+```text
+~/.config/dotfiles/local.zsh
+```
+
+### agent shell
+
+这套 CLI 配置会识别 `agent shell` 环境，并只在真实交互 TTY 下启用大部分增强行为。
+
+包括：
+
+- 避免在自动化环境中强行替换 `cd`
+- 检测 Codex / Claude Code 相关环境标记
+- 在 `TERM=dumb` 但实际有 TTY 时提升到 `xterm-256color`
+
+---
+
+## Git / Prompt / tmux / Neovim
+
+### Git
+
+默认启用：
+
+- `delta` pager
+- side-by-side diff
+- `zdiff3` conflict style
+- `submodule.recurse = true`
+
+个人身份信息通过本地文件引入：
+
+```text
+~/.gitconfig.local
+```
+
+### Starship
+
+使用 Gruvbox Dark 风格，并设置：
+
+```toml
+command_timeout = 2000
+```
+
+### tmux
+
+基于 [oh-my-tmux](https://github.com/gpakosz/.tmux)。安装器会在需要时：
+
+1. 克隆 `~/.tmux`
+2. 把 `~/.tmux.conf` 指向 oh-my-tmux 主配置
+3. 使用仓库中的 `tmux/.tmux.conf.local` 作为自定义层
+
+### Neovim
+
+基于 [LazyVim](https://github.com/LazyVim/LazyVim)。
+
+当前配置以稳定骨架为主：
+
+- `lazy.nvim` 负责插件管理
+- `LazyVim` 作为基础发行版
+- 自定义层保持精简
+
+---
+
+## 本地覆盖文件
+
+安装器会在缺失时生成这些模板：
+
+| 文件 | 用途 |
+| --- | --- |
+| `~/.gitconfig.local` | Git 姓名、邮箱、签名 key |
+| `~/.config/dotfiles/local.zsh` | 本地 shell 自定义 |
+| `~/.config/dotfiles/local.zprofile` | 本地登录 shell 自定义 |
+| `~/.config/dotfiles/hosts/<hostname>.zsh` | 主机专属 shell 配置 |
+| `~/.config/dotfiles/hosts/<hostname>.zprofile` | 主机专属登录 shell 配置 |
+| `~/.config/mise/conf.d/10-legacy-asdf.toml` | `asdf` 迁移来的额外 runtime |
+
+原则：共享配置进仓库，私有配置留本地。
+
+---
+
+## 维护命令
+
+### 预览 bootstrap
+
+```bash
+./bin/bootstrap.sh
+```
+
+### 应用 bootstrap
+
+```bash
+./bin/bootstrap.sh --apply
+```
+
+- macOS：直接执行 `brew bundle`
+- pacman 系 Linux：打印建议执行的 `pacman` / AUR 命令
+
+### 健康检查
+
+```bash
+./bin/doctor.sh
+```
+
+检查项包括：
+
+- 托管文件是否为软链
+- 关键命令是否存在
+- 当前 session 是否是 TTY
+- git pager / delta 状态
+- 交互式 zsh helper 是否可见
+- `mise` / `asdf` 状态
+- legacy leftovers
+- 本地 override 文件是否存在
+
+---
+
+## 故障排查
+
+### Homebrew 报锁或 `.incomplete`
+
+先执行：
+
+```bash
+pgrep -af brew
+```
+
+确认没有残留 brew 进程后，再删除对应 `.incomplete` 文件并重试。
+
+### pacman 镜像 404 / 过期数据库
+
+安装器会自动尝试一次：
+
+```bash
+sudo pacman -Syy --noconfirm
+```
+
+如果仍失败，优先检查镜像或仓库配置。
+
+### tmux 提示 `open terminal failed: not a terminal`
+
+通常是旧 tmux server 仍在服务新的 client。先执行：
+
+```bash
+treset
+```
+
+然后重新进入 `tmux` 或 `ta`。
+
+### shell 行为仍受旧环境影响
+
+执行：
+
+```bash
+./bin/doctor.sh
+```
+
+重点检查：
+
+- `Legacy leftovers`
+- `~/.tool-versions`
+- `.asdf` 是否仍在 `PATH` 中
+- `.oh-my-zsh` / `.p10k.zsh` 是否残留
+
+---
+
+## 仓库结构
+
+```text
+bin/          安装器、bootstrap、doctor、兼容入口
+packages/     Brew / pacman / AUR / npm 清单
+zsh/          zsh 配置
+git/          git 配置
+starship/     Starship prompt
+atuin/        Atuin 配置
+mise/         mise runtime 声明
+tmux/         tmux 自定义层
+nvim/         LazyVim 配置骨架
+examples/     本地 override 模板
+tests/        smoke test + 安装器单测
+flake.nix     只含 CLI 工具的 dev shell
+```
+
+---
+
+## 测试
+
+### Smoke test
+
+```bash
+tests/repo-smoke.sh
+```
+
+覆盖内容包括：
+
+- `install.sh` 是否正确转发到 `setup.py`
+- 包清单关键项是否存在
+- `zsh` 中的 `agent shell` 兼容逻辑是否还在
+- `doctor.sh` 的关键段落是否还在
+- README 关键说明是否存在
+- dry-run 输出是否正常
+
+### Python 单测
+
+```bash
+python3 -m unittest tests/test_setup.py
+```
+
+覆盖内容包括：
+
+- `brew bundle` 参数策略
+- Homebrew 锁冲突提示
+- AUR helper 选择逻辑
+- `mise install` 计划
+- pacman 404 自动刷新判断
+- `asdf -> mise` 迁移解析逻辑
