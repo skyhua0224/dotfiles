@@ -40,6 +40,22 @@ print_file_list() {
   grep -vE '^\s*#|^\s*$' "$file"
 }
 
+pick_aur_helper() {
+  if [[ -n "${DOTFILES_AUR_HELPER:-}" ]] && command -v "${DOTFILES_AUR_HELPER}" >/dev/null 2>&1; then
+    command -v "${DOTFILES_AUR_HELPER}"
+    return 0
+  fi
+  if command -v paru >/dev/null 2>&1; then
+    command -v paru
+    return 0
+  fi
+  if command -v yay >/dev/null 2>&1; then
+    command -v yay
+    return 0
+  fi
+  return 1
+}
+
 if [[ "$OS" == "Darwin" ]]; then
   echo "Platform: macOS"
   echo "Package source: Homebrew"
@@ -68,9 +84,16 @@ if [[ "$OS" == "Linux" ]] && command -v pacman >/dev/null 2>&1; then
   print_file_list "${REPO_ROOT}/packages/cachyos-aur.txt" | sed 's/^/  /'
 
   if [[ "$APPLY" -eq 1 ]]; then
+    aur_helper=""
+    if aur_helper="$(pick_aur_helper)"; then
+      aur_helper="$(basename "$aur_helper")"
+    fi
     echo
     echo "Run this manually:"
     echo "  sudo pacman -S --needed $(print_file_list "${REPO_ROOT}/packages/cachyos-pacman.txt" | tr '\n' ' ')"
+    if [[ -n "$aur_helper" ]]; then
+      echo "  ${aur_helper} -S --needed $(print_file_list "${REPO_ROOT}/packages/cachyos-aur.txt" | tr '\n' ' ')"
+    fi
   fi
   exit 0
 fi

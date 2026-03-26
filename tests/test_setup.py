@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 def load_setup_module():
@@ -41,6 +42,36 @@ class BrewLockHintTests(unittest.TestCase):
         self.assertIn("pgrep -af brew", hint)
 
 
+class AurHelperSelectionTests(unittest.TestCase):
+    def test_pick_aur_helper_prefers_paru_when_both_are_present(self):
+        setup = load_setup_module()
+
+        with patch.dict(setup.os.environ, {}, clear=False):
+            with patch.object(
+                setup.shutil,
+                "which",
+                side_effect=lambda name: {
+                    "paru": "/usr/bin/paru",
+                    "yay": "/usr/bin/yay",
+                }.get(name),
+            ):
+                self.assertEqual(setup._pick_aur_helper(), "/usr/bin/paru")
+
+    def test_pick_aur_helper_honors_explicit_override(self):
+        setup = load_setup_module()
+
+        with patch.dict(setup.os.environ, {"DOTFILES_AUR_HELPER": "yay"}, clear=False):
+            with patch.object(
+                setup.shutil,
+                "which",
+                side_effect=lambda name: {
+                    "paru": "/usr/bin/paru",
+                    "yay": "/usr/bin/yay",
+                }.get(name),
+            ):
+                self.assertEqual(setup._pick_aur_helper(), "/usr/bin/yay")
+
+
 class MiseInstallPlanTests(unittest.TestCase):
     def test_mise_install_plan_uses_yes_and_live_output(self):
         setup = load_setup_module()
@@ -51,6 +82,23 @@ class MiseInstallPlanTests(unittest.TestCase):
         self.assertIn("-y", cmd)
         self.assertEqual(env["MISE_JOBS"], "1")
         self.assertTrue(stream)
+
+
+class PacmanRefreshTests(unittest.TestCase):
+    def test_pacman_refresh_needed_detects_mirror_404_output(self):
+        setup = load_setup_module()
+
+        output = (
+            "error: failed retrieving file 'atuin.pkg.tar.zst' from mirror\n"
+            "The requested URL returned error: 404\n"
+        )
+
+        self.assertTrue(setup._pacman_refresh_needed(output))
+
+    def test_pacman_refresh_needed_ignores_generic_failures(self):
+        setup = load_setup_module()
+
+        self.assertFalse(setup._pacman_refresh_needed("error: target not found: carapace"))
 
 
 class LegacyToolVersionsTests(unittest.TestCase):

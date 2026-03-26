@@ -1,4 +1,4 @@
 # Optional packages that may come from AUR or different repo names.
 carapace
 fzf-tab
-tlrc
+# `tldr` comes from the official `tealdeer` package on Arch/CachyOS.

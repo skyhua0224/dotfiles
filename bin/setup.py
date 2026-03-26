@@ -123,6 +123,7 @@ TEXT = {
         "aur_missing":       "✗  未找到 AUR 助手（yay/paru），跳过：",
         "pkg_missing":       "✗  未找到支持的包管理器",
         "brew_lock_hint":    "Homebrew 检测到下载锁冲突：通常是另一条 brew 命令还在运行，或上次中断留下了 .incomplete 文件。先执行 `pgrep -af brew` 确认；如果没有残留进程，再删掉对应的 .incomplete 文件后重试。",
+        "pacman_refresh_hint": "pacman 看起来命中了过期的软件包数据库或镜像 404，安装器会先执行一次 `pacman -Syy` 再自动重试。",
         "omt_ok":            "ok   oh-my-tmux 已安装",
         "omt_install":       "→    正在安装 oh-my-tmux…",
         "no_files":          "（模块暂无文件）",
@@ -194,6 +195,7 @@ TEXT = {
         "aur_missing":       "✗  No AUR helper (yay/paru), skipping:",
         "pkg_missing":       "✗  No supported package manager found",
         "brew_lock_hint":    "Homebrew hit a download lock. Usually another brew command is still running, or an interrupted run left behind an .incomplete file. Run `pgrep -af brew` first; if nothing is left, remove the matching .incomplete file and retry.",
+        "pacman_refresh_hint": "pacman looks like it hit a stale sync database or mirror 404. The installer will run `pacman -Syy` once and retry automatically.",
         "omt_ok":            "ok   oh-my-tmux already installed",
         "omt_install":       "→    Installing oh-my-tmux…",
         "no_files":          "(no files in module yet)",
@@ -362,22 +364,6 @@ ALL_MODULES: list[tuple] = [
      "oh-my-tmux 配置，含自定义主题",
      "oh-my-tmux config with custom theme",
      "#38BDF8", "all"),
-    ("darwin",     "macOS",      "macOS",
-     "macOS 专属设置",
-     "macOS-specific settings",
-     "#FB923C", "mac"),
-    ("linux",      "Linux",      "Linux",
-     "Linux 专属设置",
-     "Linux-specific settings",
-     "#84CC16", "linux"),
-    ("hyprland",   "Hyprland",   "Hyprland",
-     "Wayland 合成器配置",
-     "Wayland compositor config",
-     "#8B5CF6", "wayland"),
-    ("quickshell", "QuickShell", "QuickShell",
-     "桌面组件配置",
-     "desktop widget config",
-     "#14B8A6", "wayland"),
 ]
 
 # ── platform detection ─────────────────────────────────────────────────────────
@@ -386,13 +372,10 @@ def detect_platform() -> dict:
         "os": platform.system(), "is_mac": False, "is_linux": False,
         "has_pacman": bool(shutil.which("pacman")),
         "has_brew":   bool(shutil.which("brew")),
-        "is_wayland": False, "distro": "",
+        "distro": "",
     }
     p["is_mac"]   = p["os"] == "Darwin"
     p["is_linux"] = p["os"] == "Linux"
-    p["is_wayland"] = p["is_linux"] and bool(
-        os.environ.get("WAYLAND_DISPLAY") or os.environ.get("XDG_SESSION_TYPE") == "wayland"
-    )
     if p["is_linux"]:
         try:
             for line in Path("/etc/os-release").read_text().splitlines():
@@ -412,7 +395,6 @@ def eligible_modules(p: dict) -> list[tuple]:
         if filt == "all":                                     result.append((key, label, desc, color))
         elif filt == "mac"     and p["is_mac"]:               result.append((key, label, desc, color))
         elif filt == "linux"   and p["is_linux"]:             result.append((key, label, desc, color))
-        elif filt == "wayland" and p["is_wayland"]:           result.append((key, label, desc, color))
     return result
 
 # ── banner ─────────────────────────────────────────────────────────────────────
@@ -1345,6 +1327,30 @@ def _brew_bundle_lock_hint(output: str) -> str | None:
     return None
 
 
+def _pick_aur_helper() -> str | None:
+    preferred = os.environ.get("DOTFILES_AUR_HELPER", "").strip()
+    if preferred:
+        helper = shutil.which(preferred)
+        if helper:
+            return helper
+    for candidate in ("paru", "yay"):
+        helper = shutil.which(candidate)
+        if helper:
+            return helper
+    return None
+
+
+def _pacman_refresh_needed(output: str) -> bool:
+    lowered = output.lower()
+    needles = (
+        "failed retrieving file",
+        "the requested url returned error: 404",
+        "status 404",
+        "error 404",
+    )
+    return any(needle in lowered for needle in needles)
+
+
 def _mise_install_plan() -> tuple[list[str], dict[str, str], bool]:
     return ["mise", "install", "-y"], {"MISE_JOBS": "1"}, True
 
@@ -1459,7 +1465,15 @@ def install_packages(p: dict, dry_run: bool) -> None:
     elif p["is_linux"] and p["has_pacman"]:
         plist = REPO_ROOT / "packages" / "cachyos-pacman.txt"
         pkgs  = [l.strip() for l in plist.read_text().splitlines() if l.strip() and not l.startswith("#")]
-        rc, _, _ = _run(["sudo", "pacman", "-S", "--needed", "--noconfirm"] + pkgs, dry_run)
+        pacman_cmd = ["sudo", "pacman", "-S", "--needed", "--noconfirm"] + pkgs
+        rc, stdout, stderr = _run(pacman_cmd, dry_run)
+        if rc != 0:
+            output = "\n".join(part for part in (stdout, stderr) if part)
+            if _pacman_refresh_needed(output):
+                _log(f"  [yellow]hint[/yellow] {t('pacman_refresh_hint')}")
+                refresh_rc, _, _ = _run(["sudo", "pacman", "-Syy", "--noconfirm"], dry_run)
+                if refresh_rc == 0:
+                    rc, stdout, stderr = _run(pacman_cmd, dry_run)
         if rc == 0:
             _log("  [green]ok[/green]   pacman packages")
         else:
@@ -1467,7 +1481,7 @@ def install_packages(p: dict, dry_run: bool) -> None:
         aur   = REPO_ROOT / "packages" / "cachyos-aur.txt"
         if aur.exists():
             apkgs = [l.strip() for l in aur.read_text().splitlines() if l.strip() and not l.startswith("#")]
-            helper = shutil.which("yay") or shutil.which("paru")
+            helper = _pick_aur_helper()
             if helper and apkgs:
                 rc, _, _ = _run([helper, "-S", "--needed", "--noconfirm"] + apkgs, dry_run)
                 if rc == 0:
